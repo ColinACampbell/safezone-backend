@@ -1,0 +1,4 @@
+env
+
+# Ignore generated files
+**/*.pyc
