@@ -1,10 +1,11 @@
 from fastapi import FastAPI, WebSocket
 import typing
 import app.core.env as config_module
-from app.database import Base
+from app.routes import user_route
 
 app = FastAPI()
 
+app.include_router(router=user_route.router, prefix="/users")
 @app.get("/")
 def get_stuff() :
     print(config_module.config)

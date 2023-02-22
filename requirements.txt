@@ -5,3 +5,5 @@ websockets
 python-dotenv
 alembic
 psycopg2
+python-jose[cryptography]
+passlib[bcrypt]
