@@ -2,3 +2,5 @@ fastapi
 sqlalchemy
 uvicorn
 websockets
+python-dotenv
+alembic

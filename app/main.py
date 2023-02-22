@@ -1,10 +1,13 @@
 from fastapi import FastAPI, WebSocket
 import typing
+import app.core.env as config_module
+from app.database import Base
 
 app = FastAPI()
 
 @app.get("/")
 def get_stuff() :
+    print(config_module.config)
     return {"message":"hello World"}
 
 
