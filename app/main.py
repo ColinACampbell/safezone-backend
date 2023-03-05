@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket
 import typing
 import app.core.env as config_module
 from app.routes import user_route
+from app.database.models.group import Group, Confidant
 
 
 app = FastAPI()

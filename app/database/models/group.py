@@ -7,4 +7,11 @@ class Group(Base) :
     __tablename__ = "groups"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    members = Column(JSON)
+    confidant = relationship("Confidant")
+
+
+class Confidant(Base) :
+    __tablename__ = "confidants"
+    id = Column(Integer, primary_key=True, index=True)
+    user = Column(Integer, ForeignKey("users.id"))
+    group = Column(Integer, ForeignKey("groups.id"))
