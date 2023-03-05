@@ -6,7 +6,7 @@ services:
       - DB_USER=root
       - DB_NAME=safezone_db
       - DB_PASSWORD=root
-      - DB_HOST=host.docker.internal
+      - DB_HOST=host.docker.internal:5431
       env_file:
       - .env.docker
       build: .
@@ -16,11 +16,19 @@ services:
       - ./app:/code/app
       depends_on:
         - db
+      
     db:
       image: postgres:15
       environment:
         - POSTGRES_PASSWORD=root
         - POSTGRES_USER=root
         - POSTGRES_DB=safezone_db
-
-
+      ports:
+        - 5431:5432
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+          - 8082:8080
+        depends_on:
+          - db
