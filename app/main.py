@@ -3,6 +3,7 @@ import typing
 import app.core.env as config_module
 from app.routes import user_route
 
+
 app = FastAPI()
 
 app.include_router(router=user_route.router, prefix="/users")
@@ -41,3 +42,5 @@ async def group_socket(websocket:WebSocket,group_name:str,) :
     while True :
         data = await websocket.receive_text()
         await connectionsManager.send_message(group_name,websocket,data)
+
+

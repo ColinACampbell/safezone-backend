@@ -25,7 +25,7 @@ def signup_user(user_create:UserCreate, db: Session = Depends(get_db)) :
 def signup_user(user_create:UserAuth, db: Session = Depends(get_db)) :
     exisiting_user = db.query(User).filter(User.email == user_create.email).first()
     if exisiting_user == None :
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This user does not exists")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This user does not exist")
     else :
         if (user_utils.verify_password(user_create.password,exisiting_user.password)) :
             user_return = UserReturn(id=exisiting_user.id, email=exisiting_user.email, first_name=exisiting_user.first_name, last_name=exisiting_user.last_name, token=user_utils.create_access_token(str(exisiting_user.id)))
