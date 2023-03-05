@@ -60,15 +60,28 @@ def get_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
     return groups_rtn[skip:limit + skip]
 
 
-@router.get("/groups/{group_id}", response_model=GroupReturn)
-def read_group(group_id: int, db: Session = Depends(get_db)):
+@router.get("/{group_id}", response_model=GroupReturn)
+def read_group(group_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     db_group = db.query(Group).filter(Group.id == group_id).first()
+
+    def get_confidant_id(confidant : ConfidantReturn) :
+        return confidant.details.id
+
     if db_group is None:
         raise HTTPException(status_code=404, detail="Group not found")
-    return db_group
+    else :
+        grp_confidants = get_confidants(db_group,db)
+        member_ids = list(map(get_confidant_id, grp_confidants))
+        print(member_ids)
+        if current_user.id in member_ids :
+            group_rtn = GroupReturn(id=db_group.id, name=db_group.name, confidants=get_confidants(db_group,db), created_by=db_group.created_by)
+            return group_rtn
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this group")
 
 
-@router.delete("/groups/{group_id}")
+
+@router.delete("/{group_id}")
 def delete_group(group_id: int, db: Session = Depends(get_db)):
     db_group = db.query(Group).filter(Group.id == group_id).first()
     if db_group is None:
