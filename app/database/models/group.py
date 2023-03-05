@@ -15,3 +15,4 @@ class Confidant(Base) :
     id = Column(Integer, primary_key=True, index=True)
     user = Column(Integer, ForeignKey("users.id"))
     group = Column(Integer, ForeignKey("groups.id"))
+    role = Column(String)
