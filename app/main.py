@@ -2,12 +2,15 @@ from fastapi import FastAPI, WebSocket
 import typing
 import app.core.env as config_module
 from app.routes import user_route
+from app.routes import group_route
 from app.database.models.group import Group, Confidant
 
 
 app = FastAPI()
 
 app.include_router(router=user_route.router, prefix="/users")
+app.include_router(router=group_route.router, prefix="/groups")
+
 @app.get("/")
 def get_stuff() :
     print(config_module.config)

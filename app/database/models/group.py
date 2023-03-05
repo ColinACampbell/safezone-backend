@@ -7,7 +7,8 @@ class Group(Base) :
     __tablename__ = "groups"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
-    confidant = relationship("Confidant")
+    confidants = relationship("Confidant")
+    created_by = Column(Integer, ForeignKey("users.id"))
 
 
 class Confidant(Base) :
