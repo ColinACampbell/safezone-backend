@@ -8,7 +8,7 @@ SQLALCHEMY_DATABASE_URL = "postgresql://{}:{}@{}/{}".format(config['DB_USER'],co
 
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
