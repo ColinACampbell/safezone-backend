@@ -3,10 +3,17 @@ import typing
 import app.core.env as config_module
 from app.routes import user_route
 from app.routes import group_route
-from app.database.models.group import Group, Confidant
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_origins=["*"]
+)
 
 app.include_router(router=user_route.router, prefix="/users")
 app.include_router(router=group_route.router, prefix="/groups")
@@ -15,7 +22,6 @@ app.include_router(router=group_route.router, prefix="/groups")
 def get_stuff() :
     print(config_module.config)
     return {"message":"hello World"}
-
 
 class ConnectionManager :
     def __init__(self) -> None:
