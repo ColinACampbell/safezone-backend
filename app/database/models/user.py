@@ -1,3 +1,4 @@
+import json
 from app.database import Base
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
@@ -9,4 +10,17 @@ class User(Base) :
     first_name = Column(String)
     last_name = Column(String)
     password = Column(String)
+
+class UserLocation:
+    def __init__(self, user_id: int,user_name:str,lat:str, lon:str) -> None:
+        self.lon = lon;
+        self.lat = lat;
+        self.user_id = user_id;  
+        self.user_name = user_name; # user's name,  not user name as in alias
+
+    def to_json(self) :
+        return json.dumps({"lat":self.lat,"lon":self.lon,"id":self.user_id, "name":self.user_name})
+    
+    def __str__(self) -> str:
+        return self.to_json();
 
