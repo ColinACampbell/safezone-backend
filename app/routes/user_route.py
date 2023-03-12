@@ -22,7 +22,7 @@ def signup_user(user_create:UserCreate, db: Session = Depends(get_db)) :
     
 
 @router.post("/auth",response_model=UserReturn)
-def signup_user(user_create:UserAuth, db: Session = Depends(get_db)) :
+def login_user(user_create:UserAuth, db: Session = Depends(get_db)) :
     exisiting_user = db.query(User).filter(User.email == user_create.email).first()
     if exisiting_user == None :
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This user does not exist")
