@@ -1,9 +1,12 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 import typing
 import app.core.env as config_module
 from app.routes import user_route
 from app.routes import group_route
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
 
 app = FastAPI()
@@ -26,6 +29,9 @@ def get_stuff() :
 class ConnectionManager :
     def __init__(self) -> None:
         self.sockets: typing.Dict[str,list[WebSocket]] = {}
+
+    async def disconnect(self,websocket:WebSocket, group_name:str):
+        self.sockets[group_name].remove(websocket);
     
     async def add_connection(self,websocket:WebSocket, group_name:str)->WebSocket: 
         await websocket.accept()
@@ -36,21 +42,29 @@ class ConnectionManager :
             self.sockets[group_name].append(websocket)
 
     async def send_message(self,group_name:str, user_socket:WebSocket, message:str) :
+        logging.debug("Message sent is "+message)
         if group_name in self.sockets :
             listeners = self.sockets[group_name]
+            
             for listener in listeners :
-                if listener != user_socket :
-                    await listener.send_text(message)
-        else :
-            return 
+                #if listener != user_socket :
+                await listener.send_text(message)
 
 connectionsManager = ConnectionManager()
 
 @app.websocket("/group/{group_name}")
 async def group_socket(websocket:WebSocket,group_name:str,) :
     await connectionsManager.add_connection(websocket,group_name)
-    while True :
-        data = await websocket.receive_text()
-        await connectionsManager.send_message(group_name,websocket,data)
+    #await websocket.accept();
+    logging.debug("Accepted request")
+
+    try :
+        while True :
+            data = await websocket.receive_text()
+            await connectionsManager.send_message(group_name,websocket,data)
+    except WebSocketDisconnect :
+        logging.debug('Connect closed')
+        await connectionsManager.disconnect(websocket,group_name)
+        #await websocket.send_text(data)
 
 
