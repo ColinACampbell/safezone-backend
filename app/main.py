@@ -1,12 +1,17 @@
 import json
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 import typing
+from app.core.dependencies import get_db, get_user_from_token
 import app.core.env as config_module
-from app.database.models.user import UserLocation
+from app.database.models.group import Confidant, Group
+import app.utils.user_utils as user_utils
+from app.database.models.user import User, UserLocation
 from app.routes import user_route
 from app.routes import group_route
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from sqlalchemy.orm import Session
+
 
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 
@@ -111,3 +116,23 @@ async def group_socket(websocket:WebSocket,group_name:str,) :
         #await websocket.send_text(data)
 
 
+@app.websocket("/stream-group-locations/{user_token}")
+async def group_socket(websocket:WebSocket,user_token:str, db: Session = Depends(get_db)) :
+
+
+    await websocket.accept()
+
+    user = get_user_from_token(db,user_token)
+    logging.debug("User autheticated")
+
+    groups = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,User.id == Confidant.user).filter(User.id == user.id).all()
+    logging.debug("Fetched groups")
+
+    members_locations : list[UserLocation] = []
+    for group in groups :
+        if group.name in list(connectionsManager.groupMembersLocations.keys()):
+            members_locations.append(*connectionsManager.groupMembersLocations[group.name])
+
+    while True :
+        dd = await websocket.receive_text()
+        await websocket.send_text(json.dumps([x.to_json() for x in members_locations]))

@@ -22,15 +22,9 @@ def get_db():
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
-    """
-    It takes a token, verifies it, and returns the user associated with the token
+    return get_user_from_token(db,token)
 
-    :param token: str = Depends(oauth2_scheme)
-    :type token: str
-    :param db: Session = Depends(get_db)
-    :type db: Session
-    :return: A user object
-    """
+def get_user_from_token(db:Session, token:str) -> User :
     try:
         payload = user_utils.verify_token(token=token)
         # oken_data = TokenPayload(**payload)
