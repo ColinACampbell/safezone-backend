@@ -78,22 +78,24 @@ class ConnectionManager :
                 user_data:typing.Dict[str,str] = json.loads(message) # convert string to json
                 new_user_location: UserLocation = UserLocation(user_name=user_data["name"],user_id=int(user_data['id']), lat=user_data['lat'], lon=user_data['lon'])
 
+                # find the old user location then, update it
                 existing_location = None
                 for existing_user_location_item in self.groupMembersLocations[group_name] :
                     if existing_user_location_item.user_id == new_user_location.user_id :
                         existing_location = existing_user_location_item
                 
+                # finally update the location
                 if existing_location != None :
                     self.groupMembersLocations[group_name].remove(existing_location)
                     self.groupMembersLocations[group_name].append(new_user_location)
                 else :
                     self.groupMembersLocations[group_name].append(new_user_location)
-            # check convert the json to a map
 
-            # update the map to the groupMembers location
 
+                # get all the listeners
                 listeners = self.sockets[group_name]
                 
+                # send the update to all the listners
                 for listener in listeners :
                     #if listener != user_socket :
                     await listener.send_text(json.dumps([x.to_json() for x in self.groupMembersLocations[group_name]]))
