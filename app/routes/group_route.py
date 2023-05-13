@@ -89,3 +89,16 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
     db.delete(db_group)
     db.commit()
     return {"message": "Group deleted"}
+
+
+@router.post("/{group_id}/restriction/{user_id}") 
+def geo_restrict_user(group_id:int, user_id:int, db:Session = Depends(get_db)) :
+    pass
+
+@router.delete("/{group_id}/restriction/{user_id}") 
+def delete_geo_restriction(group_id:int, user_id:int, db:Session = Depends(get_db)) :
+    pass
+
+@router.get("/{group_id}/restriction") 
+def get_all_geo_restrictions(group_id:int, user_id:int, db:Session = Depends(get_db)) :
+    pass

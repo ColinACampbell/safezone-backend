@@ -24,6 +24,6 @@ class GeoRestriction(Base) :
     id = Column(Integer, primary_key=True, index=True)
     user = Column(Integer, ForeignKey("users.id"))
     group = Column(Integer, ForeignKey("groups.id"))
-    lat = Column(REAL)
-    lon = Column(REAL)
+    latitude = Column(REAL)
+    longitude = Column(REAL)
     radius = Column(REAL)
