@@ -92,8 +92,32 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{group_id}/restriction/{user_id}") 
-def geo_restrict_user(group_id:int, user_id:int, db:Session = Depends(get_db)) :
-    pass
+def geo_restrict_user(group_id:int, user_id:int, current_user:User = Depends(get_current_user), db:Session = Depends(get_db)) :
+    group:Group = db.query(Group).filter(Group.id == group_id).first() 
+    
+    # check if the person doing the restriction is in the group, and is an admin
+    currentUserIsAuthorized = False
+    for confidant in group.confidants :
+        if confidant.user.id == current_user.id :
+            if confidant.role == "admin" :
+                currentUserIsAuthorized = True
+
+    if currentUserIsAuthorized :
+        # now check if the user being added is in the group
+        isAddedUserAuthorized = False
+        for confidant in group.confidants :
+            if confidant.user.id == user_id :
+                isAddedUserAuthorized = True
+        
+        if (isAddedUserAuthorized) :
+            # restrict the user 
+            pass
+        else : 
+            #throw error 
+            pass
+    else :
+        # throw error 
+        pass
 
 @router.delete("/{group_id}/restriction/{user_id}") 
 def delete_geo_restriction(group_id:int, user_id:int, db:Session = Depends(get_db)) :
