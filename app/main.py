@@ -145,7 +145,7 @@ async def group_socket(websocket:WebSocket,group_id:int,) :
 
 
 @app.websocket("/stream-group-locations/{user_token}")
-async def group_socket(websocket:WebSocket,user_token:str, db: Session = Depends(get_db)) :
+async def location_update_socket(websocket:WebSocket,user_token:str, db: Session = Depends(get_db)) :
 
 
     await websocket.accept()
@@ -161,18 +161,40 @@ async def group_socket(websocket:WebSocket,user_token:str, db: Session = Depends
 
             data = await websocket.receive_text()
 
-            members_locations : list[UserLocation] = []
             for group in groups :
 
                 await connectionsManager.update_user_location(group.id,data) # update the user location for all the groups they are in
                 logging.debug("Updated {}'s location".format(user.email))
                 logging.debug(group.id in connectionsManager.groupMembersLocations)
 
-                if group.id in list(connectionsManager.groupMembersLocations.keys()):
-                    members_locations = connectionsManager.groupMembersLocations[group.id] + members_locations
+            logging.debug("User {} updated their location".format(user.email))
+            await websocket.send_text("")
+    except WebSocketDisconnect :
+        logging.debug("User {} disconnected from the group stream".format(user.email))
 
-            logging.debug("User {} requested update".format(user.email))
+
+@app.websocket("/get-group-locations/{user_token}")
+async def group_listen_socket(websocket:WebSocket,user_token:str, db: Session = Depends(get_db)) :
+
+    await websocket.accept()
+
+    user = get_user_from_token(db,user_token)
+    logging.debug("User autheticated")
+
+    groups: list[Group] = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,User.id == Confidant.user).filter(User.id == user.id).all()
+    logging.debug("Fetched groups")
+
+    try :
+
+        while True :
+            data = await websocket.receive_text()
+            members_locations : list[UserLocation] = []
+            for group in groups :
+                if group.id in list(connectionsManager.groupMembersLocations.keys()):
+                        members_locations = connectionsManager.groupMembersLocations[group.id] + members_locations
+
+            logging.debug("User {} requested updates for all locations".format(user.email))
             logging.debug(json.dumps([x.to_json() for x in members_locations]))
             await websocket.send_text(json.dumps([x.to_json() for x in members_locations]))
     except WebSocketDisconnect :
-        print("User {} disconnected from the group stream".format(user.email))
+        logging.debug("User {} disconnected from the group listen stream".format(user.email))
