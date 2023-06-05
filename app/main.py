@@ -169,8 +169,9 @@ async def location_update_socket(websocket:WebSocket,user_token:str, db: Session
 
             logging.debug("User {} updated their location".format(user.email))
             await websocket.send_text("")
-    except WebSocketDisconnect :
+    except WebSocketDisconnect as error:
         logging.debug("User {} disconnected from the group stream".format(user.email))
+        logging.debug("Error is {}".format(error))
 
 
 @app.websocket("/get-group-locations/{user_token}")
