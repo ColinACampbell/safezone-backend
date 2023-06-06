@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.database.models.user import User
-from app.schemas.group import GeoRestrictionCreate, GroupReturn, GroupBase, ConfidantReturn
+from app.schemas.group import ConfidantCreate, GeoRestrictionCreate, GroupReturn, GroupBase, ConfidantReturn
 from app.schemas.user import UserReturn
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -10,17 +10,50 @@ from app.utils import user_utils
 
 router = APIRouter()
 
-def get_confidants(group:Group, db: Session) :
+def get_confidants(group:Group, db: Session) -> list[ConfidantReturn] :
     confidants: list[Confidant] = group.confidants
     confidants_rtn : list[ConfidantReturn] = []
 
     for confidant in confidants :
         db_user: User = db.query(User).filter(User.id == confidant.user).first()
         user_rtn : UserReturn = UserReturn(first_name=db_user.first_name, last_name=db_user.last_name, email=db_user.last_name, id=db_user.id)
-        new_confidant : ConfidantReturn = ConfidantReturn(id=confidant.id, details=user_rtn)
+        new_confidant : ConfidantReturn = ConfidantReturn(id=confidant.id, details=user_rtn, role=confidant.role)
         confidants_rtn.append(new_confidant)
 
     return confidants_rtn
+
+@router.post("/{groupId}/confidants")
+def add_confidant(confidant_create:ConfidantCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    existing_confidant = db.query(Confidant).filter(Confidant.user == confidant_create.user_id, Confidant.group == confidant_create.group_id).first()
+    if existing_confidant == None :
+        # get the group they are adding for
+        group = db.query(Group).filter(Group.id == confidant_create.group_id).first()
+
+        # check if they are in the group and have admin permission
+        confidants = get_confidants(group=group,db=db);
+        current_user_is_admin = False
+        for confidant_user in confidants :
+            print(confidant_user.role)
+            if confidant_user.details.id == current_user.id and confidant_user.role == "admin" : # TODO: Convert to variable
+                current_user_is_admin = True
+        
+
+        if (current_user_is_admin) :
+            new_confidant = Confidant(user=confidant_create.user_id, group = confidant_create.group_id, role = confidant_create.role)
+            db.add(new_confidant)
+            db.commit()
+
+            confidant_user_details:User = db.query(User).filter(User.id == confidant_create.user_id).first()
+            confidant_return = ConfidantReturn(id=new_confidant.id, 
+                                               details = UserReturn(first_name = confidant_user_details.first_name, 
+                                                                    last_name = confidant_user_details.last_name, 
+                                                                    email = confidant_user_details.email, 
+                                                                    id = confidant_user_details.id))
+            return confidant_return
+        else :
+            return HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail="You are not a guardian")
+    else:
+        return HTTPException(status_code = status.HTTP_409_CONFLICT)
 
 @router.post("/", response_model=GroupReturn)
 def create_group(group: GroupBase, db: Session = Depends(get_db), current_user:User = Depends(get_current_user)):

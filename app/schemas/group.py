@@ -7,9 +7,14 @@ from app.schemas.user import UserReturn
 class ConfidantBase(BaseModel) :
     role: str
 
+class ConfidantCreate(ConfidantBase) :
+    user_id:int
+    group_id:int
+
 class ConfidantReturn(BaseModel) :
     id:int
     details: UserReturn
+    role: Optional[str]
 
 # Also used to create
 class GroupBase(BaseModel):
