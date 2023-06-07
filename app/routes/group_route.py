@@ -22,12 +22,13 @@ def get_confidants(group:Group, db: Session) -> list[ConfidantReturn] :
 
     return confidants_rtn
 
-@router.post("/{groupId}/confidants")
+# TODO: Write code to catch error if user does not exists
+@router.post("/{groupId}/confidants", response_model=GroupReturn)
 def add_confidant(confidant_create:ConfidantCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     existing_confidant = db.query(Confidant).filter(Confidant.user == confidant_create.user_id, Confidant.group == confidant_create.group_id).first()
     if existing_confidant == None :
         # get the group they are adding for
-        group = db.query(Group).filter(Group.id == confidant_create.group_id).first()
+        group : Group = db.query(Group).filter(Group.id == confidant_create.group_id).first()
 
         # check if they are in the group and have admin permission
         confidants = get_confidants(group=group,db=db);
@@ -44,12 +45,9 @@ def add_confidant(confidant_create:ConfidantCreate, db: Session = Depends(get_db
             db.commit()
 
             confidant_user_details:User = db.query(User).filter(User.id == confidant_create.user_id).first()
-            confidant_return = ConfidantReturn(id=new_confidant.id, 
-                                               details = UserReturn(first_name = confidant_user_details.first_name, 
-                                                                    last_name = confidant_user_details.last_name, 
-                                                                    email = confidant_user_details.email, 
-                                                                    id = confidant_user_details.id))
-            return confidant_return
+            
+            grp_return = GroupReturn(name=group.name, id=group.id, created_by=group.created_by, confidants=get_confidants(group=group,db=db))
+            return grp_return
         else :
             return HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail="You are not a guardian")
     else:
