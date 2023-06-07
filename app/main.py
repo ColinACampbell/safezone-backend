@@ -8,6 +8,7 @@ import app.utils.user_utils as user_utils
 from app.database.models.user import User, UserLocation
 from app.routes import user_route
 from app.routes import group_route
+from app.routes import medical_record
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from sqlalchemy.orm import Session
@@ -27,6 +28,8 @@ app.add_middleware(
 
 app.include_router(router=user_route.router, prefix="/users")
 app.include_router(router=group_route.router, prefix="/groups")
+app.include_router(router=medical_record.router, prefix="/medical-records")
+
 
 @app.get("/")
 def get_stuff() :
