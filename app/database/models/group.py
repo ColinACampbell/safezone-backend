@@ -27,3 +27,5 @@ class GeoRestriction(Base) :
     latitude = Column(REAL)
     longitude = Column(REAL)
     radius = Column(REAL)
+    from_time = Column(Integer)
+    to_time = Column(Integer)

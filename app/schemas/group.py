@@ -31,3 +31,5 @@ class GeoRestrictionCreate(BaseModel) :
     latitude : float
     longitude : float
     radius : float
+    from_time: int
+    to_time: int

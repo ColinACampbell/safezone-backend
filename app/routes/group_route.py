@@ -142,7 +142,7 @@ def geo_restrict_user(restriction: GeoRestrictionCreate, current_user:User = Dep
         
         if (isAddedUserAuthorized) :
             # restrict the user 
-            georestriction = GeoRestriction(user=restriction.user_id, group=restriction.group_id, latitude=restriction.latitude, longitude=restriction.longitude, radius=restriction.radius)
+            georestriction = GeoRestriction(user=restriction.user_id, group=restriction.group_id, latitude=restriction.latitude, longitude=restriction.longitude, radius=restriction.radius, from_time = restriction.from_time, to_time = restriction.to_time)
             db.add(georestriction)
             db.commit()
             return restriction
