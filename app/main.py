@@ -109,7 +109,7 @@ class ConnectionManager :
                             logging.debug(restriction.latitude)
                             logging.debug(restriction.longitude)
                             new_user_location.geo_flag = True
-                            new_user_location.geo_radius = user_distance_from_geo_restriction_point - restriction.radius
+                            new_user_location.geo_radius = float(user_distance_from_geo_restriction_point - restriction.radius)
                         
                         logging.debug(user_distance_from_geo_restriction_point)
 

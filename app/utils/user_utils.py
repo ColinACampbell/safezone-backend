@@ -4,7 +4,7 @@ from typing import Union, Any
 from jose import jwt
 from passlib.context import CryptContext
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 60 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 60 minutes * 24 hours
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 ALGORITHM = "HS256"
 JWT_SECRET_KEY = "37373__393993;;///3499sjjsAJJjs"  # should be kept secret
