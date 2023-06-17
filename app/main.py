@@ -1,7 +1,8 @@
 import json
+from app.schemas.location import LocationBase
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 import typing
-from app.core.dependencies import get_db, get_user_from_token
+from app.core.dependencies import get_current_user, get_db, get_user_from_token
 import app.core.env as config_module
 from app.database.models.group import Confidant, GeoRestriction, Group
 import app.utils.user_utils as user_utils
@@ -35,6 +36,22 @@ app.include_router(router=medical_record.router, prefix="/medical-records")
 def get_stuff() :
     print(config_module.config)
     return {"message":"hello World"}
+
+@app.post("/webhook/update-location", tags=['webhook'])
+async def update_location(location_create : LocationBase, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) :
+
+
+    groups: list[Group] = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,User.id == Confidant.user).filter(User.id == current_user.id).all()
+
+    geo_restrictions = db.query(GeoRestriction).filter(GeoRestriction.user == current_user.id);
+
+    data_dict = {"lat": location_create.lat, "lon": location_create.lon, "id": current_user.id, "name": location_create.name}
+    data = json.dumps(data_dict)
+    logging.debug("{} connected to location update webhook".format(current_user.email))
+    for group in groups :
+            await connectionsManager.update_user_location(group.id,data,geo_restrictions) # update the user location for all the groups they are in
+            logging.debug("Updated {}'s location".format(current_user.email))
+
 
 def is_json(myjson:str):
         try:
@@ -124,10 +141,6 @@ class ConnectionManager :
                 else :
                     self.groupMembersLocations[group_id].append(new_user_location)
 
-
-                
-
-
     async def send_message(self,group_id:int) :
         if group_id not in self.groupMembersLocations :
             self.groupMembersLocations[group_id] = []
@@ -141,6 +154,7 @@ class ConnectionManager :
                 await listener.send_text(json.dumps([x.to_json() for x in self.groupMembersLocations[group_id]]))
 
 connectionsManager = ConnectionManager()
+
 
 
 # @app.websocket("/user/location-update/{user_id}")
