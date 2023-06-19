@@ -1,3 +1,4 @@
+from app.database.models.group import Confidant, Group
 from app.database.models.medical_record import MedicalRecord
 from app.schemas.medical_record import MedicalRecordBase, MedicalRecordCreate, MedicalRecordReturn
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -37,3 +38,39 @@ def get_medical_records( db : Session = Depends(get_db), current_user : User = D
 
     
     return medical_records_return
+
+@router.get("/{user_id}", response_model=List[MedicalRecordReturn])
+def get_medical_records_for_user( user_id: int, db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
+    
+
+    def lists_overlap(a, b):
+        return bool(set(a) & set(b))
+    # check if both users are in the same group
+    confidant_membership: Confidant = db.query(Confidant).filter(Confidant.user == user_id).all()
+    current_user_membership: Confidant = db.query(Confidant).filter(Confidant.user == current_user.id).all()
+    confidant_groups = [x.group for x in confidant_membership ]
+    current_user_groups = [x.group for x in current_user_membership ]
+
+    current_user_is_auth = False
+    if (lists_overlap(confidant_groups,current_user_groups)) :
+        current_user_is_auth = True
+
+    if current_user_is_auth :
+        medical_records : list[MedicalRecord] = db.query(MedicalRecord).filter(MedicalRecord.user == user_id).all()
+        medical_records_return = []
+        
+        for record in medical_records :
+            record_return = MedicalRecordReturn(id=record.id, user_id=current_user.id, 
+                                                    title = record.title, 
+                                                    description = record.description)
+            
+            medical_records_return.append(record_return)
+
+        
+        return medical_records_return
+    else :
+        raise HTTPException(
+                status_code=401,  # status.HTTP_401_UNAUTHORIZED,
+                detail="You do not have permission",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
