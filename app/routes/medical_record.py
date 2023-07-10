@@ -10,6 +10,20 @@ from app.utils import user_utils
 
 router = APIRouter()
 
+def are_both_users_in_same_group(user_id:int, current_user_id: int, db:Session) :
+    def lists_overlap(a, b):
+        return bool(set(a) & set(b))
+    # check if both users are in the same group
+    confidant_membership: Confidant = db.query(Confidant).filter(Confidant.user == user_id).all()
+    current_user_membership: Confidant = db.query(Confidant).filter(Confidant.user == current_user_id).all()
+    confidant_groups = [x.group for x in confidant_membership ]
+    current_user_groups = [x.group for x in current_user_membership ]
+
+    if (lists_overlap(confidant_groups,current_user_groups)) :
+        return True
+    else:
+        return False
+
 @router.post("/", response_model=MedicalRecordReturn)
 def create_medical_record(medical_record_create : MedicalRecordCreate, db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
     new_medical_record: MedicalRecord = MedicalRecord(user=current_user.id, title = medical_record_create.title, description = medical_record_create.description)
@@ -43,17 +57,7 @@ def get_medical_records( db : Session = Depends(get_db), current_user : User = D
 def get_medical_records_for_user( user_id: int, db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
     
 
-    def lists_overlap(a, b):
-        return bool(set(a) & set(b))
-    # check if both users are in the same group
-    confidant_membership: Confidant = db.query(Confidant).filter(Confidant.user == user_id).all()
-    current_user_membership: Confidant = db.query(Confidant).filter(Confidant.user == current_user.id).all()
-    confidant_groups = [x.group for x in confidant_membership ]
-    current_user_groups = [x.group for x in current_user_membership ]
-
-    current_user_is_auth = False
-    if (lists_overlap(confidant_groups,current_user_groups)) :
-        current_user_is_auth = True
+    current_user_is_auth = are_both_users_in_same_group(user_id,current_user.id,db)
 
     if current_user_is_auth :
         medical_records : list[MedicalRecord] = db.query(MedicalRecord).filter(MedicalRecord.user == user_id).all()

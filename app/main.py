@@ -110,7 +110,7 @@ class ConnectionManager :
                 new_user_location: UserLocation = UserLocation(user_name=user_data["name"],user_id=int(user_data['id']), lat=user_data['lat'], lon=user_data['lon'])
 
                 for restriction in geo_restrictions :
-
+                    # Note this doesn't count for hours into a new 24 day
                     if current_hour >= restriction.from_time and current_hour <= restriction.to_time :
                         
 
