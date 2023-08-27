@@ -25,11 +25,15 @@ class GroupReturn(GroupBase):
     confidants : list[ConfidantReturn]
     created_by: int
 
-class GeoRestrictionCreate(BaseModel) :
+class GeoRestrictionBase(BaseModel) :
     user_id : int
     group_id : int
     latitude : float
     longitude : float
     radius : float
     from_time: int
-    to_time: int
+    to_time: int 
+
+class GeoRestrictionCreate(GeoRestrictionBase) :
+    pass
+

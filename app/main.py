@@ -1,7 +1,8 @@
 import json
+from app.schemas.location import LocationBase
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 import typing
-from app.core.dependencies import get_db, get_user_from_token
+from app.core.dependencies import get_current_user, get_db, get_user_from_token
 import app.core.env as config_module
 from app.database.models.group import Confidant, GeoRestriction, Group
 import app.utils.user_utils as user_utils
@@ -15,9 +16,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 import math
 
-
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
-
 
 app = FastAPI()
 
@@ -37,6 +36,22 @@ app.include_router(router=medical_record.router, prefix="/medical-records")
 def get_stuff() :
     print(config_module.config)
     return {"message":"hello World"}
+
+@app.post("/webhook/update-location", tags=['webhook'])
+async def update_location(location_create : LocationBase, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)) :
+
+
+    groups: list[Group] = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,User.id == Confidant.user).filter(User.id == current_user.id).all()
+
+    geo_restrictions = db.query(GeoRestriction).filter(GeoRestriction.user == current_user.id);
+
+    data_dict = {"lat": location_create.lat, "lon": location_create.lon, "id": current_user.id, "name": location_create.name}
+    data = json.dumps(data_dict)
+    logging.debug("{} connected to location update webhook".format(current_user.email))
+    for group in groups :
+            await connectionsManager.update_user_location(group.id,data,geo_restrictions) # update the user location for all the groups they are in
+            logging.debug("Updated {}'s location".format(current_user.email))
+
 
 def is_json(myjson:str):
         try:
@@ -95,7 +110,7 @@ class ConnectionManager :
                 new_user_location: UserLocation = UserLocation(user_name=user_data["name"],user_id=int(user_data['id']), lat=user_data['lat'], lon=user_data['lon'])
 
                 for restriction in geo_restrictions :
-
+                    # Note this doesn't count for hours into a new 24 day
                     if current_hour >= restriction.from_time and current_hour <= restriction.to_time :
                         
 
@@ -126,10 +141,6 @@ class ConnectionManager :
                 else :
                     self.groupMembersLocations[group_id].append(new_user_location)
 
-
-                
-
-
     async def send_message(self,group_id:int) :
         if group_id not in self.groupMembersLocations :
             self.groupMembersLocations[group_id] = []
@@ -145,29 +156,30 @@ class ConnectionManager :
 connectionsManager = ConnectionManager()
 
 
-@app.websocket("/user/location-update/{user_id}")
-async def user_location_update(websocket:WebSocket, user_id:int, db:Session=Depends(get_db)) :
-    # connect user
-    # get the user groups
-    # update the location of the user in all their groups
-    await websocket.accept()
 
-    #user = get_user_from_token(db,user_token)
-    logging.debug("User autheticated")
+# @app.websocket("/user/location-update/{user_id}")
+# async def user_location_update(websocket:WebSocket, user_id:int, db:Session=Depends(get_db)) :
+#     # connect user
+#     # get the user groups
+#     # update the location of the user in all their groups
+#     await websocket.accept()
 
-    groups:list[Group] = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,user_id == Confidant.user).filter(User.id == user_id).all()
-    logging.debug("Fetched groups")
+#     #user = get_user_from_token(db,user_token)
+#     logging.debug("User autheticated")
 
-    try :
-        while True :
-            data = await websocket.receive_text()
-            for group in groups :
-                await connectionsManager.update_user_location(group.id,data)
-                logging.debug(group.id in connectionsManager.groupMembersLocations)
+#     groups:list[Group] = db.query(Group).join(Confidant,Confidant.group == Group.id).join(User,user_id == Confidant.user).filter(User.id == user_id).all()
+#     logging.debug("Fetched groups")
 
-            await websocket.send_text("")
-    except WebSocketDisconnect :
-        logging.debug('Connect closed')    
+#     try :
+#         while True :
+#             data = await websocket.receive_text()
+#             for group in groups :
+#                 await connectionsManager.update_user_location(group.id,data)
+#                 logging.debug(group.id in connectionsManager.groupMembersLocations)
+
+#             await websocket.send_text("")
+#     except WebSocketDisconnect :
+#         logging.debug('Connect closed')    
     
 
 @app.websocket("/group/{group_id}")
@@ -200,10 +212,16 @@ async def location_update_socket(websocket:WebSocket,user_token:str, db: Session
 
     geo_restrictions = db.query(GeoRestriction).filter(GeoRestriction.user == user.id);
 
+    logging.debug("{} connected to group stream".format(user.email))
+    await websocket.send_text("")
+
     try :
         while True :
+            logging.debug("Awaiting locations from {}".format(user.email))
 
             data = await websocket.receive_text()
+
+            logging.debug("Got locations from {}".format(user.email))
 
             for group in groups :
 
@@ -236,8 +254,8 @@ async def group_listen_socket(websocket:WebSocket,user_token:str, db: Session = 
                 if group.id in list(connectionsManager.groupMembersLocations.keys()):
                         members_locations = connectionsManager.groupMembersLocations[group.id] + members_locations
 
-            logging.debug("User {} requested updates for all locations".format(user.email))
-            logging.debug(json.dumps([x.to_json() for x in members_locations]))
+            #logging.debug("User {} requested updates for all locations".format(user.email))
+            #logging.debug(json.dumps([x.to_json() for x in members_locations]))
             await websocket.send_text(json.dumps([x.to_json() for x in members_locations]))
     except WebSocketDisconnect :
         logging.debug("User {} disconnected from the group listen stream".format(user.email))
