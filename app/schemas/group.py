@@ -7,9 +7,14 @@ from app.schemas.user import UserReturn
 class ConfidantBase(BaseModel) :
     role: str
 
+class ConfidantCreate(ConfidantBase) :
+    user_id:int
+    group_id:int
+
 class ConfidantReturn(BaseModel) :
     id:int
     details: UserReturn
+    role: Optional[str]
 
 # Also used to create
 class GroupBase(BaseModel):
@@ -19,3 +24,16 @@ class GroupReturn(GroupBase):
     id: int
     confidants : list[ConfidantReturn]
     created_by: int
+
+class GeoRestrictionBase(BaseModel) :
+    user_id : int
+    group_id : int
+    latitude : float
+    longitude : float
+    radius : float
+    from_time: int
+    to_time: int 
+
+class GeoRestrictionCreate(GeoRestrictionBase) :
+    pass
+
