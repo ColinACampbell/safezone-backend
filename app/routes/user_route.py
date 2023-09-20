@@ -8,7 +8,7 @@ from app.utils import user_utils
 
 router = APIRouter()
 
-@router.post("/",response_model=UserReturn)
+@router.post("/",response_model=UserReturn, tags=['user'])
 def signup_user(user_create:UserCreate, db: Session = Depends(get_db)) :
     exisiting_user = db.query(User).filter(User.email == user_create.email).first()
     if exisiting_user == None :
@@ -21,7 +21,7 @@ def signup_user(user_create:UserCreate, db: Session = Depends(get_db)) :
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This user already exists")
     
 
-@router.post("/auth",response_model=UserReturn)
+@router.post("/auth",response_model=UserReturn, tags=['user'])
 def login_user(user_create:UserAuth, db: Session = Depends(get_db)) :
     exisiting_user = db.query(User).filter(User.email == user_create.email).first()
     if exisiting_user == None :

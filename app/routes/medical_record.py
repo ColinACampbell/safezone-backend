@@ -24,7 +24,7 @@ def are_both_users_in_same_group(user_id:int, current_user_id: int, db:Session) 
     else:
         return False
 
-@router.post("/", response_model=MedicalRecordReturn)
+@router.post("/", response_model=MedicalRecordReturn, tags=['medical-record'])
 def create_medical_record(medical_record_create : MedicalRecordCreate, db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
     new_medical_record: MedicalRecord = MedicalRecord(user=current_user.id, title = medical_record_create.title, description = medical_record_create.description)
     db.add(new_medical_record)
@@ -37,7 +37,7 @@ def create_medical_record(medical_record_create : MedicalRecordCreate, db : Sess
     
     return medical_record_return
 
-@router.get("/", response_model=List[MedicalRecordReturn])
+@router.get("/", response_model=List[MedicalRecordReturn],  tags=['medical-record'])
 def get_medical_records( db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
     
     medical_records : list[MedicalRecord] = db.query(MedicalRecord).filter(MedicalRecord.user == current_user.id).all()
@@ -53,7 +53,7 @@ def get_medical_records( db : Session = Depends(get_db), current_user : User = D
     
     return medical_records_return
 
-@router.get("/{user_id}", response_model=List[MedicalRecordReturn])
+@router.get("/{user_id}", response_model=List[MedicalRecordReturn], tags=['medical-record'])
 def get_medical_records_for_user( user_id: int, db : Session = Depends(get_db), current_user : User = Depends(get_current_user)):
     
 

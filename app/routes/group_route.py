@@ -24,7 +24,7 @@ def get_confidants(group:Group, db: Session) -> list[ConfidantReturn] :
     return confidants_rtn
 
 # TODO: Write code to catch error if user does not exists
-@router.post("/{groupId}/confidants", response_model=GroupReturn)
+@router.post("/{groupId}/confidants", response_model=GroupReturn, tags=['group'])
 def add_confidant(confidant_create:ConfidantCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     existing_confidant = db.query(Confidant).filter(Confidant.user == confidant_create.user_id, Confidant.group == confidant_create.group_id).first()
     if existing_confidant == None :
@@ -54,7 +54,7 @@ def add_confidant(confidant_create:ConfidantCreate, db: Session = Depends(get_db
     else:
         return HTTPException(status_code = status.HTTP_409_CONFLICT)
 
-@router.post("/", response_model=GroupReturn)
+@router.post("/", response_model=GroupReturn, tags=['group'])
 def create_group(group: GroupBase, db: Session = Depends(get_db), current_user:User = Depends(get_current_user)):
     exisiting_group = db.query(Group).filter(Group.name == group.name).first()
     if exisiting_group == None :
@@ -73,7 +73,7 @@ def create_group(group: GroupBase, db: Session = Depends(get_db), current_user:U
     else :
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="This group already exists")
 
-@router.get("/", response_model=List[GroupReturn])
+@router.get("/", response_model=List[GroupReturn], tags=['group'])
 def get_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     groups : list[Group] = []
 
@@ -92,7 +92,7 @@ def get_groups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
     return groups_rtn[skip:limit + skip]
 
 
-@router.get("/{group_id}", response_model=GroupReturn)
+@router.get("/{group_id}", response_model=GroupReturn, tags=['group'])
 def read_group(group_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     db_group = db.query(Group).filter(Group.id == group_id).first()
 
@@ -113,7 +113,7 @@ def read_group(group_id: int, db: Session = Depends(get_db), current_user = Depe
 
 
 
-@router.delete("/{group_id}")
+@router.delete("/{group_id}", tags=['group'])
 def delete_group(group_id: int, db: Session = Depends(get_db)):
     db_group = db.query(Group).filter(Group.id == group_id).first()
     if db_group is None:
@@ -123,7 +123,7 @@ def delete_group(group_id: int, db: Session = Depends(get_db)):
     return {"message": "Group deleted"}
 
 
-@router.post("/{group_id}/restriction") 
+@router.post("/{group_id}/restriction", tags=['group']) 
 def geo_restrict_user(restriction: GeoRestrictionCreate, current_user:User = Depends(get_current_user), db:Session = Depends(get_db)) :
     group:Group = db.query(Group).filter(Group.id == restriction.group_id).first() 
     
@@ -153,7 +153,7 @@ def geo_restrict_user(restriction: GeoRestrictionCreate, current_user:User = Dep
         # throw error 
         pass
 
-@router.get("/{group_id}/restriction/{user_id}", response_model=list[GeoRestrictionBase], tags=['geofence']) 
+@router.get("/{group_id}/restriction/{user_id}", response_model=list[GeoRestrictionBase], tags=['geofence','group']) 
 def get_user_geo_restriction(group_id:int, user_id:int, current_user: User = Depends(get_current_user), db:Session = Depends(get_db)) :
     is_current_user_auth = are_both_users_in_same_group(user_id,current_user.id,db)
     confidant_geo_restrictions : list[GeoRestriction] = db.query(GeoRestriction).filter(GeoRestriction.group == group_id, GeoRestriction.user == user_id).all()
@@ -176,6 +176,7 @@ def get_user_geo_restriction(group_id:int, user_id:int, current_user: User = Dep
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-@router.get("/{group_id}/restriction") 
+# TODO : Implement
+@router.get("/{group_id}/restriction", tags=['group']) 
 def get_all_geo_restrictions(group_id:int, user_id:int, db:Session = Depends(get_db)) :
     pass
