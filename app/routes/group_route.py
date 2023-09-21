@@ -175,8 +175,35 @@ def get_user_geo_restriction(group_id:int, user_id:int, current_user: User = Dep
                 detail="You do not have permission",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+    
 
-# TODO : Implement
+# TODO: Test code
 @router.get("/{group_id}/restriction", tags=['group']) 
-def get_all_geo_restrictions(group_id:int, user_id:int, db:Session = Depends(get_db)) :
-    pass
+def get_all_geo_restrictions(group_id:int, db:Session = Depends(get_db), current_user: User = Depends(get_current_user)) :
+    current_user_confidantship: List[Confidant] = db.query(Group).filter(Confidant.user == current_user.id).all()
+    group_ids = [x.group for x in current_user_confidantship]
+    is_user_auth = False
+
+    confidant_geo_restrictions : list[GeoRestriction] = db.query(GeoRestriction).filter(GeoRestriction.group == group_id, GeoRestriction.user == user_id).all()
+
+    if group_id in group_ids :
+        is_user_auth = True
+    
+    if is_user_auth :
+        geo_restriction_response : list[GeoRestrictionBase] = []
+
+        for restriction in confidant_geo_restrictions :
+            restriction_response = GeoRestrictionBase(user_id = restriction.user,
+                group_id = restriction.group,
+                latitude = restriction.latitude,
+                longitude = restriction.longitude,
+                radius = restriction.radius,
+                from_time = restriction.from_time,
+                to_time = restriction.to_time)
+            geo_restriction_response.append(restriction_response)
+        return geo_restriction_response
+    else :
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You do not have permission"
+        )
